@@ -5,12 +5,24 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { TableVirtuoso } from 'react-virtuoso';
-import { Button } from '@mui/material';
+import { Button, ThemeProvider } from '@mui/material';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import Slide from '@mui/material/Slide';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import themeColor from '../../theme/themeColor';
 
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function MyCalendar() {
 
@@ -24,6 +36,7 @@ export default function MyCalendar() {
 
     const [myDate, setMyDate] = useState(tomorrow.toISOString().split('T')[0])
     const [myTraining, setMyTraining] = useState()
+    const [myTime, setMyTime] = useState(0)
 
     // Pobranie danych z Postgresql
     const fetchCalendar = async () => {
@@ -46,8 +59,54 @@ export default function MyCalendar() {
     }, []);
     
     // Zapis do bazy danych:
-    const saveToPostgreSql = async (myDate, myTraining) => {
-        console.log(myDate, myTraining)
+    const saveToPostgreSql = async (myDate, myTraining, myTime) => {
+  
+        try {
+          const res = await fetch (`http://localhost:5000/${myDate}`, {
+            method: 'PUT', 
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              data:  myDate,
+              training: myTraining,
+              time: myTime
+            }),
+          })
+          if (res.ok) {
+            window.location.reload()
+            console.log('Edycja nastąpiła poprawnie do bazy')
+          }
+          else {
+            console.log('Błąd edycji danych do bazy')
+          }
+        }
+        catch (error) {
+            console.error(error)
+        }
+    }
+
+    // Edycja widoku kalendarza:
+    const [openViewCalendar, setOpenViewCalendar] = useState(false)
+    const [editDate, setEditDate] = useState()
+    const [editTraining, setEditTraining] = useState()
+    const [editTime, setEditTime] = useState()
+
+    const editCalendarView = async (myDate, myTraining, myTime) => {
+      setEditDate(myDate)
+      setEditTraining(myTraining)
+      setEditTime(myTime)
+      setOpenViewCalendar(true)
+    }
+
+    const closeEditCalendarView = () => {
+      setOpenViewCalendar(false)
+    }
+
+    const acceptEditCalendarView = async () => {
+      saveToPostgreSql(editDate, editTraining, editTime)
+      setOpenViewCalendar(false)
+
     }
 
     // Komponenty dla Tabeli kalendarza
@@ -72,6 +131,9 @@ export default function MyCalendar() {
             <TableCell variant="head" align="right" style={{fontWeight: 'bold', width: '25%'}}>
               Czas
             </TableCell>
+            <TableCell variant="head" align="right" style={{fontWeight: 'bold', width: '25%'}}>
+              Filtr
+            </TableCell>
           </TableRow>
         );
       }
@@ -84,6 +146,21 @@ export default function MyCalendar() {
         const year = date.getFullYear();
         return `${day}-${month}-${year}`;
       }
+
+      // Sortowanie po dacie
+      function sortByDate(a, b) {
+        return new Date(a.data) - new Date(b.data);
+      }
+
+      // Dzisiejszy dzień + 2 tygodnie do przodu
+      function isTwoWeeks(date) {
+        const today = new Date();
+        const twoWeeksFromNow = new Date();
+        twoWeeksFromNow.setDate(today.getDate() + 14);
+        return new Date(date) >= today && new Date(date) <= twoWeeksFromNow;
+      }
+       
+      const filteredData = myCalendar.filter((row) => isTwoWeeks(row.data));
 
       // Dzień tygodnia
       function getDayName(isoDate) {
@@ -108,6 +185,12 @@ export default function MyCalendar() {
             <TableCell align="right" style={{width: '25%'}}>
               {row.time}
             </TableCell>
+            <TableCell align="right" style={{width: '25%'}}>
+              <EditCalendarIcon 
+              onClick={() => editCalendarView(formatDate(row.data), row.training, row.time)}
+              style={{cursor: 'pointer'}}
+              />
+            </TableCell>
           </React.Fragment>
         );
       }
@@ -115,7 +198,10 @@ export default function MyCalendar() {
   return (
     <div className='mycalendar'>
         <div className="mycalendar__add">
-          <Paper>
+          <ThemeProvider
+          theme={themeColor}
+          >
+             <Paper>
           <label for="start">Wprowadź datę:</label>
           <input 
           type="date" id="start" name="trip-start" value={myDate}
@@ -133,27 +219,87 @@ export default function MyCalendar() {
                 <MenuItem value={'Pływanie'}>Pływanie</MenuItem>
                 <MenuItem value={'Rower'}>Rower</MenuItem>
                 <MenuItem value={'Bieg'}>Bieg</MenuItem>
-                <MenuItem value={'Siłownia'}>Siłowniaa</MenuItem>
+                <MenuItem value={'Siłownia'}>Siłownia</MenuItem>
               </Select>
           </FormControl>
+
+          <TextField
+          id="standard-number"
+          label="Czas"
+          type="number"
+          value={myTime}
+          onChange={(e) => setMyTime(e.target.value)}
+          InputLabelProps={{
+            shrink: true,
+          }}
+          variant="standard"
+        />
+
           <Button
-          variant='outlined'
-          onClick={() => saveToPostgreSql(myDate, myTraining)}
+          variant='contained'
+          onClick={() => saveToPostgreSql(myDate, myTraining, myTime)}
           >
             Zapisz
           </Button>
           </Paper>
+          </ThemeProvider>
+         
         </div>
         <div className="mycalendar__table">
-            <div>Kalendarz</div>
+            <div className="mycalendar__table-header">Kalendarz</div>
             <Paper style={{ height: 400, width: '100%', overflow: 'auto' }}>
                 <TableVirtuoso
-                data={myCalendar}
+                data={filteredData.sort(sortByDate)}
                 components={VirtuosoTableComponents}
                 fixedHeaderContent={fixedHeaderContent}
                 itemContent={rowContent}
                 />
             </Paper>
+
+            <Dialog
+            open={openViewCalendar}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={closeEditCalendarView}
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle>{`Kalendarz: ${editDate}`}</DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-slide-description">
+                    <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Trening</InputLabel>
+                    <Select
+                      labelId="demo-simple-select-label"
+                      id="demo-simple-select"
+                      value={editTraining}
+                      label="Training"
+                      onChange={(e) => setEditTraining(e.target.value)}
+                    >
+                      <MenuItem value={'Pływanie'}>Pływanie</MenuItem>
+                      <MenuItem value={'Rower'}>Rower</MenuItem>
+                      <MenuItem value={'Bieg'}>Bieg</MenuItem>
+                      <MenuItem value={'Siłownia'}>Siłownia</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <TextField
+                id="standard-number"
+                label="Czas"
+                type="number"
+                value={editTime}
+                onChange={(e) => setEditTime(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="standard"
+              />
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={closeEditCalendarView}>Anuluj</Button>
+              <Button onClick={acceptEditCalendarView}>Akceptuję</Button>
+            </DialogActions>
+          </Dialog>
         </div>
     </div>
   )

@@ -8,6 +8,10 @@
     align-items: center;
     &__table {
         width: 50%;
+        &-header {
+            font-size: 3rem;
+            font-weight: 500;
+        }
     }
 
 }
