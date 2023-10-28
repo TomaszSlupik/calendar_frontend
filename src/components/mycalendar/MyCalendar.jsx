@@ -109,6 +109,18 @@ export default function MyCalendar() {
 
     }
 
+    // Style 
+    const style = {
+      tableRow: {width: '100%', backgroundColor: 'gray'},
+      tableHeadr: {fontWeight: 'bold', width: 300},
+      table: {fontWeight: 'bold', width: '25%'},
+      tableCel: {width: '25%'},
+      calendar: {cursor: 'pointer'},
+      paper: { height: 400, width: '100%', overflow: 'auto' }, 
+      paperView: {minHeight: '155px'},
+      btnPaper: {position: 'absolute', right: '3%', bottom: '10%',}
+    }
+
     // Komponenty dla Tabeli kalendarza
     const VirtuosoTableComponents = {
         Scroller: React.forwardRef((props, ref) => (
@@ -118,20 +130,20 @@ export default function MyCalendar() {
       
       function fixedHeaderContent() {
         return (
-          <TableRow style={{width: '100%', backgroundColor: 'gray'}}>
-            <TableCell variant="head" align="left" style={{fontWeight: 'bold', width: 300}}>
+          <TableRow style={style.tableRow}>
+            <TableCell variant="head" align="left" style={style.tableHeadr}>
               Data
             </TableCell>
-            <TableCell variant="head" align="left" style={{fontWeight: 'bold', width: '25%'}}>
+            <TableCell variant="head" align="left" style={style.table}>
               Tydzień
             </TableCell>
-            <TableCell variant="head" align="left" style={{fontWeight: 'bold', width: '25%'}}>
+            <TableCell variant="head" align="left" style={style.table}>
               Trening
             </TableCell>
-            <TableCell variant="head" align="right" style={{fontWeight: 'bold', width: '25%'}}>
+            <TableCell variant="head" align="right" style={style.table}>
               Czas
             </TableCell>
-            <TableCell variant="head" align="right" style={{fontWeight: 'bold', width: '25%'}}>
+            <TableCell variant="head" align="right" style={style.table}>
               Filtr
             </TableCell>
           </TableRow>
@@ -173,22 +185,22 @@ export default function MyCalendar() {
       function rowContent(index, row) {
         return (
           <React.Fragment>
-            <TableCell align="left" style={{width: '25%'}}>
+            <TableCell align="left" style={style.tableCel}>
               {formatDate(row.data)}
             </TableCell>
-            <TableCell align="left" style={{ width: '25%' }}>
+            <TableCell align="left" style={style.tableCel}>
               {getDayName(row.data)} 
             </TableCell>
-            <TableCell align="left" style={{width: '25%'}}>
+            <TableCell align="left" style={style.tableCel}>
               {row.training}
             </TableCell>
-            <TableCell align="right" style={{width: '25%'}}>
+            <TableCell align="right" style={style.tableCel}>
               {row.time}
             </TableCell>
-            <TableCell align="right" style={{width: '25%'}}>
+            <TableCell align="right" style={style.tableCel}>
               <EditCalendarIcon 
               onClick={() => editCalendarView(formatDate(row.data), row.training, row.time)}
-              style={{cursor: 'pointer'}}
+              style={style.calendar}
               />
             </TableCell>
           </React.Fragment>
@@ -201,41 +213,48 @@ export default function MyCalendar() {
           <ThemeProvider
           theme={themeColor}
           >
-             <Paper>
-          <label for="start">Wprowadź datę:</label>
+             <Paper style={style.paperView}>
+          <label 
+          className="mycalendar__add-date"
+          for="start">Wprowadź datę: </label>
           <input 
+          className="mycalendar__add-input"
           type="date" id="start" name="trip-start" value={myDate}
           onChange={(e) => setMyDate(e.target.value)}
           />
-          <FormControl fullWidth>
-          <InputLabel id="demo-simple-select-label">Trening</InputLabel>
-              <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={myTraining}
-                label="Training"
-                onChange={(e) => setMyTraining(e.target.value)}
-              >
-                <MenuItem value={'Pływanie'}>Pływanie</MenuItem>
-                <MenuItem value={'Rower'}>Rower</MenuItem>
-                <MenuItem value={'Bieg'}>Bieg</MenuItem>
-                <MenuItem value={'Siłownia'}>Siłownia</MenuItem>
-              </Select>
-          </FormControl>
-
-          <TextField
-          id="standard-number"
-          label="Czas"
-          type="number"
-          value={myTime}
-          onChange={(e) => setMyTime(e.target.value)}
-          InputLabelProps={{
-            shrink: true,
-          }}
-          variant="standard"
-        />
-
+          <div className="mycalendar__add-training">
+            <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">Trening</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={myTraining}
+                  label="Training"
+                  onChange={(e) => setMyTraining(e.target.value)}
+                >
+                  <MenuItem value={'Pływanie'}>Pływanie</MenuItem>
+                  <MenuItem value={'Rower'}>Rower</MenuItem>
+                  <MenuItem value={'Bieg'}>Bieg</MenuItem>
+                  <MenuItem value={'Siłownia'}>Siłownia</MenuItem>
+                </Select>
+            </FormControl>
+          </div>
+          <div className="mycalendar__add-time">
+              <TextField
+              style={{width: '100%'}}
+              id="standard-number"
+              label="Czas"
+              type="number"
+              value={myTime}
+              onChange={(e) => setMyTime(e.target.value)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              variant="standard"
+            />
+          </div>
           <Button
+          style={style.btnPaper}
           variant='contained'
           onClick={() => saveToPostgreSql(myDate, myTraining, myTime)}
           >
@@ -247,7 +266,7 @@ export default function MyCalendar() {
         </div>
         <div className="mycalendar__table">
             <div className="mycalendar__table-header">Kalendarz</div>
-            <Paper style={{ height: 400, width: '100%', overflow: 'auto' }}>
+            <Paper style={style.paper}>
                 <TableVirtuoso
                 data={filteredData.sort(sortByDate)}
                 components={VirtuosoTableComponents}
@@ -296,8 +315,12 @@ export default function MyCalendar() {
               </DialogContentText>
             </DialogContent>
             <DialogActions>
-              <Button onClick={closeEditCalendarView}>Anuluj</Button>
-              <Button onClick={acceptEditCalendarView}>Akceptuję</Button>
+              <Button 
+              variant='outlined'
+              onClick={closeEditCalendarView}>Anuluj</Button>
+              <Button 
+              variant='contained'
+              onClick={acceptEditCalendarView}>Akceptuję</Button>
             </DialogActions>
           </Dialog>
         </div>

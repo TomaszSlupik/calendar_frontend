@@ -13,5 +13,27 @@
             font-weight: 500;
         }
     }
+    &__add {
+        position: relative;
+        width: 25%;
+        margin-top: 2em;
+        &-date {
+            margin-top: 0.2em;
+            margin-left: 0.2em;
+            color: #6ab645;
+            font-weight: 500;
+        }
+        &-input {
+            margin-top: 0.4em;
+        }
+        &-training {
+            width: 50%;
+            margin: 0.4em 0.4em;
+        }
+        &-time {
+            width: 50%;
+            margin: 0.4em 0.4em;
+        }
+    }
 
 }
