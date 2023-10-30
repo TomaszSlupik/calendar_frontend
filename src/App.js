@@ -1,13 +1,10 @@
-import './App.scss';
-import MyCalendar from './components/mycalendar/MyCalendar';
-
+import "./App.scss";
+import MyCalendar from "./components/mycalendar/MyCalendar";
 
 function App() {
-
-
   return (
     <div className="App">
-        <MyCalendar />
+      <MyCalendar />
     </div>
   );
 }
